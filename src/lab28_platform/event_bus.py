@@ -524,10 +524,25 @@ def decode_dead_letters(settings: KafkaSettings, *, limit: int = 20) -> list[dic
             "enable.auto.commit": False,
         }
     )
-    consumer.subscribe([settings.topic_dlq])
     found: list[dict[str, Any]] = []
     idle = 0
     try:
+        # This is an inspection operation, not a durable consumer.  Assigning
+        # every partition explicitly from the beginning avoids inheriting an
+        # offset (or waiting for a group rebalance) from a previous operator or
+        # integration-test invocation.
+        metadata = consumer.list_topics(settings.topic_dlq, timeout=5.0)
+        topic = metadata.topics.get(settings.topic_dlq)
+        if topic is None or topic.error is not None:
+            return found
+        from confluent_kafka import OFFSET_BEGINNING, TopicPartition
+
+        consumer.assign(
+            [
+                TopicPartition(settings.topic_dlq, partition_id, OFFSET_BEGINNING)
+                for partition_id in topic.partitions
+            ]
+        )
         while len(found) < limit and idle < 3:
             message = consumer.poll(1.0)
             if message is None:

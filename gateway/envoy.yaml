@@ -34,6 +34,14 @@ static_resources:
                       routes:
                         - match: {path: /healthz}
                           direct_response: {status: 200, body: {inline_string: "ok\n"}}
+                        # Ingestion is decoupled from retrieval: accepting a
+                        # feedback event only needs the API process to be live.
+                        # Keep it available while the serving readiness check
+                        # deliberately ejects a pod missing a mandatory
+                        # retrieval dependency.
+                        - match: {prefix: /api/v1/feedback}
+                          decorator: {operation: lab28.gateway.request}
+                          route: {cluster: ingestion_api, timeout: 120s}
                         - match: {prefix: /}
                           decorator: {operation: lab28.gateway.request}
                           route: {cluster: api, timeout: 120s}
@@ -71,13 +79,15 @@ static_resources:
                     socket_address: {address: api, port_value: 8000}
       health_checks:
         - timeout: 2s
-          interval: 2s
+          # The integration recovery assertions poll the application every two
+          # seconds.  Re-admit a recovered ready pod well within that window so
+          # the gateway's health state cannot lag the application's verdict.
+          interval: 0.5s
           unhealthy_threshold: 1
           healthy_threshold: 1
-          # Liveness decides whether Envoy can route. Application readiness is
-          # deliberately proxied so students can see the exact degraded
-          # dependency report instead of an opaque "no healthy upstream".
-          http_health_check: {path: /health}
+          # Readiness decides whether Envoy can route. A mandatory dependency
+          # outage ejects the upstream instead of proxying to an unready pod.
+          http_health_check: {path: /ready}
       common_lb_config:
         healthy_panic_threshold: {value: 0}
     - name: otel_collector
@@ -94,6 +104,24 @@ static_resources:
               - endpoint:
                   address:
                     socket_address: {address: otel-collector, port_value: 4317}
+    - name: ingestion_api
+      type: STRICT_DNS
+      connect_timeout: 2s
+      load_assignment:
+        cluster_name: ingestion_api
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: {address: api, port_value: 8000}
+      health_checks:
+        - timeout: 2s
+          interval: 2s
+          unhealthy_threshold: 1
+          healthy_threshold: 1
+          http_health_check: {path: /health}
+      common_lb_config:
+        healthy_panic_threshold: {value: 0}
 admin:
   address:
     socket_address: {address: 0.0.0.0, port_value: 9901}
