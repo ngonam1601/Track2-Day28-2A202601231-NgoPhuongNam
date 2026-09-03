@@ -30,7 +30,7 @@
       "name": "Pipeline → Delta Lake / Lakehouse",
       "owner": "team-data",
       "status": "ready",
-      "detail": "documents v16 (25 rows), feedback v37 (44 rows)",
+      "detail": "documents v25 (31 rows), feedback v58 (61 rows)",
       "readiness_check": "reliability.delta_transaction_log"
     },
     {
@@ -46,7 +46,7 @@
       "name": "Data → Vector Store (embeddings)",
       "owner": "team-serving",
       "status": "ready",
-      "detail": "25 points; ok",
+      "detail": "31 points; ok",
       "readiness_check": "reliability.vector_store"
     },
     {

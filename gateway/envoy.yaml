@@ -78,11 +78,11 @@ static_resources:
                   address:
                     socket_address: {address: api, port_value: 8000}
       health_checks:
-        - timeout: 2s
-          # The integration recovery assertions poll the application every two
-          # seconds.  Re-admit a recovered ready pod well within that window so
-          # the gateway's health state cannot lag the application's verdict.
-          interval: 0.5s
+        # A real remote vLLM identity probe can exceed two seconds.  Do not
+        # eject an otherwise ready API merely because the health check itself
+        # timed out; recovery still remains well inside the J4 deadline.
+        - timeout: 10s
+          interval: 2s
           unhealthy_threshold: 1
           healthy_threshold: 1
           # Readiness decides whether Envoy can route. A mandatory dependency

@@ -3,15 +3,15 @@
   "route": "/health",
   "configured_rps": 10,
   "requests_sent": 30,
-  "accepted": 10,
-  "rejected": 20,
-  "rate_limited_stat": 62.0,
+  "accepted": 13,
+  "rejected": 17,
+  "rate_limited_stat": 18.0,
   "sample_200": {
     "status": 200,
-    "x-request-id": "a394b6b0-52e4-97f4-90d5-4fa263dc0317"
+    "x-request-id": "557bbd1c-62f4-985b-b23f-472ea70360bd"
   },
   "sample_429": {
     "status": 429,
-    "x-request-id": "295cfc7b-b114-9c34-b5cc-6012d957e978"
+    "x-request-id": "e358be99-6f88-984f-8390-8aae6421a004"
   }
 }
